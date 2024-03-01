@@ -1,0 +1,85 @@
+#!/bin/python3
+
+import json 
+import os 
+import sys 
+from datetime import datetime 
+
+
+config_file = os.path.expanduser('~/.config/newtxt.conf')
+
+
+class NewTxt:
+    def __init__(self, filename=None, title=None):
+        self.filename = filename
+        self.title = title
+        self.cwd = os.getcwd()
+        self.config_file = config_file
+        self.add_extension = False 
+
+        self.lines = None 
+        self.line_char = None 
+        self.text = ''
+
+        self._load_config()
+        self._parse_args()
+
+
+    def _load_config(self):
+        try:
+            with open(self.config_file, 'r') as file:
+                config = json.load(file)
+            self.lines = config['lines']
+            self.line_char = config['line_char']
+            self.add_extension = config['add_extension']
+                
+        except FileNotFoundError:
+            print(f"[ERROR]: Config file {config_file} could not be found.")
+            sys.exit()
+
+
+    def _parse_args(self):
+        args = sys.argv[1:]
+        try:
+            self.filename = args[0]
+        except IndexError:
+            print("[X] Invalid argument: Filename must be provided")
+            sys.exit()
+        if len(args) > 1:
+            self.title = ' '.join(args[1:])
+
+
+    def _separator(self):
+        sep = ''
+        sep += '\n\n'
+        sep = sep + (self.line_char * self.lines)
+        sep += '\n\n'
+        return sep
+
+
+    def _date(self):
+        now = datetime.now()
+        return now.strftime('%m/%d/%Y')
+
+
+    def _craft_text(self):
+        self.text += self._separator()
+        if self.title:
+            self.text += self.title 
+            self.text += '\n'
+        self.text = self.text + f'- Created: {self._date()}'
+        self.text += self._separator()
+        self.text += '\n\n\n'   # Text area
+        self.text += self._separator()
+        return self.text
+
+    def create(self):
+        with open(self.filename, 'w') as file:
+            file.write(self._craft_text())
+        print(f"[>] File {self.filename} created.")
+
+
+if __name__ == '__main__':
+    n = NewTxt()
+    n.create()
+
